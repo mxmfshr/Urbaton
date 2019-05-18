@@ -7,8 +7,7 @@ import json
 parser = reqparse.RequestParser()
 parser.add_argument('lat', type=float)
 parser.add_argument('lng', type=float)
-parser.add_argument('cost', type=str)
-parser.add_argument('place', type=str)
+parser.add_argument('filters', action='append')
 parser.add_argument('count', type=int)
 
 app = Flask(__name__)
@@ -16,11 +15,10 @@ api = Api(app)
 
 df = pd.read_csv('df_final.csv')
 
-def get_recommendations(lat, lng, cost, place, count, df):
-    if cost:
-        df = df[df[cost] == 1]
-    if place:
-        df = df[df[place] == 1]
+def get_recommendations(lat, lng, filters, count, df):
+    if filters:
+        for filter in filters:
+            df = df[df[filter] == 1]
     
     df['lat'] = df['location_lat'].apply(lambda x: abs(x - lat))
     df['lng'] = df['location_lng'].apply(lambda x: abs(x - lng))
@@ -35,14 +33,13 @@ class HelloWorld(Resource):
         args = parser.parse_args()
         lat = args['lat']
         lng = args['lng']
-        cost = args['cost']
-        place = args['place']
+        filters = args['filters']
         count = args['count']
-        res = get_recommendations(lat, lng, cost, place, count, df)
+        res = get_recommendations(lat, lng, filters, count, df)
         
         return res
 
 api.add_resource(HelloWorld, '/')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
